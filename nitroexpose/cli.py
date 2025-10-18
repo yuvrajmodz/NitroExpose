@@ -20,6 +20,9 @@ def print_red(text):
     
 def print_yellow(text):
     print("\033[1;33m" + text + "\033[0m")
+    
+def print_turquoise(text):
+    print("\033[38;2;0;255;234m" + text + "\033[0m")
 
 def run_command(cmd):
     process = subprocess.Popen(cmd, shell=True)
@@ -91,7 +94,7 @@ def restricted_input(prompt, allowed_pattern):
 
 def main():
     if os.geteuid() != 0:
-        print_red("Please Use Root Environment.")
+        print_red("\nPlease Use Root Environment.\n")
         sys.exit(1)
 
     if not is_installed("nginx -v"):
@@ -118,8 +121,8 @@ def main():
         print_green("python3-certbot-nginx plugin installed.")
         print("\n")
 
-    print_yellow("┌─╼ Enter Domain Or Subdomain")
-    domain = restricted_input("\033[1;33m└────╼ ❯❯❯ \033[0m", r"[a-zA-Z0-9\.\-]")
+    print_turquoise("┌─╼ Enter Domain Or Subdomain")
+    domain = restricted_input("\033[38;2;0;255;234m└────╼ ❯❯❯ \033[0m", r"[a-zA-Z0-9\.\-]")
     
     print("\n")
     
@@ -127,8 +130,8 @@ def main():
         print_red("Domain is invalid, Operation Failed.")
         sys.exit(1)
 
-    print_yellow("┌─╼ Enter Port To Expose")
-    port = restricted_input("\033[1;33m└────╼ ❯❯❯ \033[0m", r"[0-9]+")
+    print_turquoise("┌─╼ Enter Port To Expose")
+    port = restricted_input("\033[38;2;0;255;234m└────╼ ❯❯❯ \033[0m", r"[0-9]+")
     
     print("\n")
 
@@ -228,7 +231,12 @@ server {{
         print_green(f"Exposed Successfully To Domain\n")
         print_green(f"Exposed On: https://{domain}\n")
         print_green(f"Port: {port}\n")
-        print_green(f"SSL Installed Using Let's Encrypt.\n\n")
+        print_green(f"SSL Installed Using Let's Encrypt.\n")
+        print_yellow(f"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+        print_yellow(f"If You Like NitroExpose, Please Support Us by:\n")
+        print_yellow(f" * Join Our Telegram Channel:   https://t.me/NacDevs")
+        print_yellow(f" * Please Star Our Project:     https://github.com/yuvrajmodz/NitroExpose")
+        print_yellow(f"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n\n")
     else:
         print_green(f"Exposed Successfully To Domain\n")
         print_green(f"Exposed On: http://{domain}\n")
