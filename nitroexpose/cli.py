@@ -9,7 +9,9 @@ import time
 import requests
 import signal
 import socket
+import importlib.metadata
 
+# cli.py
 # 𝗠𝗮𝗻𝗮𝗴𝗲𝗱 𝗕𝘆 @Nactire
 
 def print_green(text):
@@ -23,19 +25,39 @@ def print_yellow(text):
     
 def print_turquoise(text):
     print("\033[38;2;0;255;234m" + text + "\033[0m")
+    
+def get_version():
+    try:
+        version = importlib.metadata.version('nitroexpose')
+        return version
+    except importlib.metadata.PackageNotFoundError:
+        return "Unknown"
 
 def run_command(cmd):
-    process = subprocess.Popen(cmd, shell=True)
+    process = subprocess.Popen(
+        cmd, 
+        shell=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
     process.wait()
     return process.returncode
 
 def is_installed(cmd):
-    return subprocess.call(f"{cmd} > /dev/null 2>&1", shell=True) == 0
+    return subprocess.call(
+        f"{cmd} > /dev/null 2>&1", 
+        shell=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    ) == 0
     
 def is_certbot_nginx_plugin_installed():
     try:
         result = subprocess.check_output(
-            "dpkg -l | grep python3-certbot-nginx", shell=True, text=True
+            "dpkg -l | grep python3-certbot-nginx", 
+            shell=True, 
+            text=True,
+            stderr=subprocess.DEVNULL
         )
         return "python3-certbot-nginx" in result
     except subprocess.CalledProcessError:
@@ -92,34 +114,166 @@ def restricted_input(prompt, allowed_pattern):
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return buffer
 
+def install_and_verify_package(package_name, check_cmd, install_cmds):
+    print_green(f"Installing {package_name} ...")
+    
+    for cmd in install_cmds:
+        run_command(cmd)
+    
+    if check_cmd():
+        print_green(f"{package_name} installed.")
+        return True
+    else:
+        print_red(f"{package_name} installing Error.")
+        sys.exit(1)
+
+def is_valid_domain(domain):
+    if "http://" in domain or "https://" in domain or " " in domain:
+        return False
+
+    if "." not in domain:
+        return False
+
+    pattern = r'^[a-zA-Z0-9\.\-]+$'
+    if not re.match(pattern, domain):
+        return False
+    
+    return True
+
+def is_subdomain(domain):
+    parts = domain.split(".")
+    return len(parts) > 2
+
+def remove_domain(domain):
+    if os.geteuid() != 0:
+        print_red("\nPlease Use Root Environment.\n")
+        sys.exit(1)
+    
+    if not is_valid_domain(domain):
+        print_red("\nDomain Format Not Valid.\n")
+        sys.exit(1)
+    
+    if not is_installed("nginx -v"):
+        install_and_verify_package(
+            "NGINX",
+            lambda: is_installed("nginx -v"),
+            [
+                "sudo apt update -o Acquire::AllowInsecureRepositories=true",
+                "sudo apt install -y nginx",
+                "sudo systemctl start nginx",
+                "sudo systemctl enable nginx"
+            ]
+        )
+    else:
+        print_green("NGINX installed.")
+
+    if not is_installed("certbot --version"):
+        install_and_verify_package(
+            "Certbot",
+            lambda: is_installed("certbot --version"),
+            [
+                "sudo apt update -o Acquire::AllowInsecureRepositories=true",
+                "sudo apt install -y certbot python3-certbot-nginx"
+            ]
+        )
+    else:
+        print_green("Certbot installed.")
+        
+    if not is_certbot_nginx_plugin_installed():
+        install_and_verify_package(
+            "python3-certbot-nginx plugin",
+            is_certbot_nginx_plugin_installed,
+            [
+                "sudo apt update -o Acquire::AllowInsecureRepositories=true",
+                "sudo apt install -y python3-certbot-nginx"
+            ]
+        )
+    else:
+        print_green("python3-certbot-nginx plugin installed.")
+    
+    print("\n")
+    
+    available_path = f"/etc/nginx/sites-available/{domain}"
+    enabled_path = f"/etc/nginx/sites-enabled/{domain}"
+    
+    available_exists = os.path.exists(available_path)
+    enabled_exists = os.path.exists(enabled_path)
+    
+    domain_type = "Subdomain" if is_subdomain(domain) else "Domain"
+    
+    if not available_exists and not enabled_exists:
+        run_command(f"sudo rm -f {available_path}")
+        run_command(f"sudo rm -f {enabled_path}")
+        run_command("sudo systemctl reload nginx")
+        print_red(f"Targeted {domain_type} Doesn't Exist in Your Server.\n")
+        sys.exit(1)
+    elif not available_exists or not enabled_exists:
+        run_command(f"sudo rm -f {available_path}")
+        run_command(f"sudo rm -f {enabled_path}")
+        run_command("sudo systemctl reload nginx")
+        print_red(f"Targeted {domain_type} Doesn't Exist in Your Server.\n")
+        sys.exit(1)
+    else:
+        run_command(f"sudo rm -f {available_path}")
+        run_command(f"sudo rm -f {enabled_path}")
+        run_command("sudo systemctl reload nginx")
+        print_green(f"\n{domain_type} Removed Successfully.\n")
+        sys.exit(0)
+
 def main():
+    if len(sys.argv) == 2 and sys.argv[1] in ["-v", "--v"]:
+        version = get_version()
+        print_green(f"V{version}")
+        sys.exit(0)
+
+    if len(sys.argv) == 3 and sys.argv[1] == "remove":
+        domain = sys.argv[2]
+        remove_domain(domain)
+        return
+    
     if os.geteuid() != 0:
         print_red("\nPlease Use Root Environment.\n")
         sys.exit(1)
 
     if not is_installed("nginx -v"):
-        print_green("Installing NGINX ...")
-        run_command("sudo apt update -o Acquire::AllowInsecureRepositories=true")
-        run_command("sudo apt install -y nginx")
-        run_command("sudo systemctl start nginx")
-        run_command("sudo systemctl enable nginx")
+        install_and_verify_package(
+            "NGINX",
+            lambda: is_installed("nginx -v"),
+            [
+                "sudo apt update -o Acquire::AllowInsecureRepositories=true",
+                "sudo apt install -y nginx",
+                "sudo systemctl start nginx",
+                "sudo systemctl enable nginx"
+            ]
+        )
     else:
         print_green("NGINX installed.")
 
     if not is_installed("certbot --version"):
-        print_green("Installing Certbot ...")
-        run_command("sudo apt update -o Acquire::AllowInsecureRepositories=true")
-        run_command("sudo apt install -y certbot python3-certbot-nginx")
+        install_and_verify_package(
+            "Certbot",
+            lambda: is_installed("certbot --version"),
+            [
+                "sudo apt update -o Acquire::AllowInsecureRepositories=true",
+                "sudo apt install -y certbot python3-certbot-nginx"
+            ]
+        )
     else:
         print_green("Certbot installed.")
-        
+
     if not is_certbot_nginx_plugin_installed():
-        print_green("Installing python3-certbot-nginx plugin ...")
-        run_command("sudo apt update -o Acquire::AllowInsecureRepositories=true")
-        run_command("sudo apt install -y python3-certbot-nginx")
+        install_and_verify_package(
+            "python3-certbot-nginx plugin",
+            is_certbot_nginx_plugin_installed,
+            [
+                "sudo apt update -o Acquire::AllowInsecureRepositories=true",
+                "sudo apt install -y python3-certbot-nginx"
+            ]
+        )
     else:
         print_green("python3-certbot-nginx plugin installed.")
-        print("\n")
+        
+    print("\n")
 
     print_turquoise("┌─╼ Enter Domain Or Subdomain")
     domain = restricted_input("\033[38;2;0;255;234m└────╼ ❯❯❯ \033[0m", r"[a-zA-Z0-9\.\-]")
@@ -187,6 +341,8 @@ server {{
     run_command(f"sudo rm -f /etc/nginx/sites-available/{domain}")
     run_command(f"sudo rm -f /etc/nginx/sites-enabled/{domain}")
     run_command("sudo systemctl reload nginx")
+    
+    print_yellow("SSL Cert installing...")
 
     nginx_conf = f"""
 server {{
@@ -213,7 +369,7 @@ server {{
     run_command(f"sudo certbot --nginx -d {domain} --non-interactive --agree-tos --email nitroexpose@gmail.com")
     run_command("sudo systemctl reload nginx")
 
-    print_yellow("\nSSL Certificate Checking...")
+    print_yellow("SSL Certificate Checking...")
     time.sleep(2)
 
     ssl_installed = False
@@ -228,7 +384,7 @@ server {{
 
     print("\n")
     if ssl_installed:
-        print_green(f"Exposed Successfully To Domain\n")
+        print_green(f"Exposed Successfully On Your Domain\n")
         print_green(f"Exposed On: https://{domain}\n")
         print_green(f"Port: {port}\n")
         print_green(f"SSL Installed Using Let's Encrypt.\n")
@@ -238,7 +394,7 @@ server {{
         print_yellow(f" * Please Star Our Project:     https://github.com/yuvrajmodz/NitroExpose")
         print_yellow(f"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n\n")
     else:
-        print_green(f"Exposed Successfully To Domain\n")
+        print_green(f"Exposed Successfully On Your Domain\n")
         print_green(f"Exposed On: http://{domain}\n")
         print_green(f"Port: {port}\n")
         print_yellow(f"Unfortunately, please verify your records carefully. Your server is exposed on your domain, and we are experiencing difficulties while attempting to install an SSL certificate.\n\n")
