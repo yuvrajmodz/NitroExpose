@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="NitroExpose",
-    version="2.0",
+    version="2.1",
     author="@NacDevs",
     author_email="yuvrajmodz@gmail.com",
     description="Advanced CLI To Expose Port To Your Domain.",

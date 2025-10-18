@@ -1,6 +1,6 @@
 ## NitroExpose
 
-**Letest Version:** 2.0  
+**Letest Version:** 2.1  
 **Developer:** @Nactire  
 **Git Repo:** [NitroExpose](https://github.com/yuvrajmodz/NitroExpose)
 
@@ -31,19 +31,10 @@ It provides a **one-command deployment system** for developers who want to run t
 - **apt** Package Manager Required
 
 
-## 🌐 Module installation
+## 🌊 Module installation
 
 ```bash
 pip install NitroExpose --break-system-packages
-```
-
-## 🌊 Optional installation
-
-```bash
-sudo apt update -y
-sudo apt install nginx -y
-sudo apt install certbot -y
-sudo apt install python3-certbot-nginx -y
 ```
 
 ## 🧭 Usage Guide
@@ -55,12 +46,10 @@ Step 1 –  Point Your Vps/Server IP in Your Domain Records:
 **IPv4**:   Your Vps Server IP  
 **TTL**:   Auto  
 
-
 Step 2 – **Launch NitroExpose**  
 ```bash
 NitroExpose
 ```
-
 
 Step 3 – **Enter Your Domain Or Subdomain**  
 ```bash
@@ -68,12 +57,28 @@ Step 3 – **Enter Your Domain Or Subdomain**
 └────╼ ❯❯❯ myproject.example.com
 ```
 
-
 Step 4 – **Enter the Local Port to Expose**  
 ```bash
 ┌─╼ Enter Port To Expose
 └────╼ ❯❯❯ 8000
 ```
 
+✨ **Now it Will Take 8 to 9 Seconds For Verification And Then Boom! Your Local Port Successfully Exposed To Your Public Domain/Subdomain**.  
 
-✨ **Now it Will Take 8 to 9 Seconds For Verification And Then Boom! Your Local Port Successfully Exposed To Your Public Domain/Subdomain**.
+## 🎯 To Remove Domain/Subdomain
+
+```bash
+NitroExpose remove <domain/subdomain>
+```
+
+## 🎯 Domain/Subdomain Remove Example
+
+```bash
+NitroExpose remove myproject.example.com
+```
+
+## To Check Package Version
+
+```bash
+NitroExpose --v
+```
