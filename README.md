@@ -1,6 +1,6 @@
 ## NitroExpose
 
-**Letest Version:** 2.1  
+**Letest Version:** 2.3  
 **Developer:** @Nactire  
 **Git Repo:** [NitroExpose](https://github.com/yuvrajmodz/NitroExpose)
 
@@ -9,6 +9,8 @@
 
 **NitroExpose** is an advanced CLI tool that allows you to **instantly expose any local port to your custom domain,**  
 **automatic SSL installation** Powered by Let's Encrypt.  
+
+If You Don't Have Domain, No Problem We Also Provide Free Subdomain To Host Your Local Port Service On Subdomain With Https.
 
 It provides a **one-command deployment system** for developers who want to run their local apps (Flask, FastAPI, Node.js, etc.) directly on a live domain without manually configuring NGINX or DNS records.
 
@@ -57,13 +59,29 @@ Step 3 – **Enter Your Domain Or Subdomain**
 └────╼ ❯❯❯ myproject.example.com
 ```
 
-Step 4 – **Enter the Local Port to Expose**  
+Step 4 – **Enter Your Local Port to Expose**  
 ```bash
 ┌─╼ Enter Port To Expose
 └────╼ ❯❯❯ 8000
 ```
 
 ✨ **Now it Will Take 8 to 9 Seconds For Verification And Then Boom! Your Local Port Successfully Exposed To Your Public Domain/Subdomain**.  
+
+## 🌐 Host On Free Subdomain (Cloudflared).
+
+Step 1 – **Launch NitroExpose With FreeHost**  
+```bash
+NitroExpose --freehost
+```
+
+Step 2 – **Enter Your Local Port To Expose On Subdomain**  
+```bash
+┌─╼ Enter Port To Expose
+└────╼ ❯❯❯ 8001
+```
+
+✨ **Now it Will Take 8 to 9 Seconds To Connect CloudServer And Then Your Service Successfully Exposed To Our Subdomain With 24/7.**  
+
 
 ## 🎯 To Remove Domain/Subdomain
 

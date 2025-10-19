@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="NitroExpose",
-    version="2.1",
+    version="2.3",
     author="@NacDevs",
     author_email="yuvrajmodz@gmail.com",
     description="Advanced CLI To Expose Port To Your Domain.",
@@ -12,7 +12,8 @@ setup(
     packages=find_packages(),
     python_requires='>=3.8',
     install_requires=[
-        "requests"
+        "requests",
+        "supercore"
     ],
     entry_points={
         'console_scripts': [
