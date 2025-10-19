@@ -10,8 +10,11 @@ import requests
 import signal
 import socket
 import importlib.metadata
+import random
+import string
+import threading
 
-# cli.py
+# cli.py (Main File)
 # 𝗠𝗮𝗻𝗮𝗴𝗲𝗱 𝗕𝘆 @Nactire
 
 def print_green(text):
@@ -73,6 +76,18 @@ def is_port_listening(port):
     except Exception:
         return False
 
+def get_system_architecture():
+    try:
+        result = subprocess.check_output("uname -m", shell=True, text=True).strip()
+        return result
+    except Exception:
+        return None
+
+def generate_random_process_name():
+    letters = ''.join(random.choices(string.ascii_lowercase, k=5))
+    numbers = ''.join(random.choices(string.digits, k=5))
+    return letters + numbers
+
 def restricted_input(prompt, allowed_pattern):
     def handle_sigint(signum, frame):
         print("\n\n")
@@ -115,7 +130,7 @@ def restricted_input(prompt, allowed_pattern):
     return buffer
 
 def install_and_verify_package(package_name, check_cmd, install_cmds):
-    print_green(f"Installing {package_name} ...")
+    print_green(f"Installing {package_name}...")
     
     for cmd in install_cmds:
         run_command(cmd)
@@ -220,11 +235,157 @@ def remove_domain(domain):
         print_green(f"\n{domain_type} Removed Successfully.\n")
         sys.exit(0)
 
+def freehost_mode():
+    if os.geteuid() != 0:
+        print_red("\nPlease Use Root Environment.\n")
+        sys.exit(1)
+    
+    if not is_installed("expect -v"):
+        print_green("Installing Expect...")
+        run_command("sudo apt update -o Acquire::AllowInsecureRepositories=true")
+        run_command("sudo apt install -y expect")
+        
+        if not is_installed("expect -v"):
+            print_red("Expect installing Error.")
+            sys.exit(1)
+        print_green("Expect installed.")
+    
+    if not is_installed("cloudflared --version"):
+        print_green("Installing CloudServer...")
+        
+        arch = get_system_architecture()
+        
+        if arch in ["x86_64", "aarch64"]:
+            install_cmds = [
+                "wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64",
+                "chmod +x cloudflared-linux-amd64",
+                "sudo mv cloudflared-linux-amd64 /usr/local/bin/cloudflared"
+            ]
+        elif arch in ["armv7l", "armhf"]:
+            install_cmds = [
+                "wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm",
+                "chmod +x cloudflared-linux-arm",
+                "sudo mv cloudflared-linux-arm /usr/local/bin/cloudflared"
+            ]
+        else:
+            print_red("Unsupported architecture.")
+            sys.exit(1)
+        
+        for cmd in install_cmds:
+            run_command(cmd)
+        
+        if is_installed("cloudflared --version"):
+            print_green("CloudServer installed.")
+        else:
+            print_red("CloudServer installing Error.")
+            sys.exit(1)
+    else:
+        print_green("CloudServer installed.")
+    
+    print("\n")
+    
+    print_turquoise("┌─╼ Enter Port To Expose")
+    port = restricted_input("\033[38;2;0;255;234m└────╼ ❯❯❯ \033[0m", r"[0-9]+")
+    
+    print("\n")
+    
+    if not is_port_listening(port):
+        print_red("Port Not Listening, Operation Failed.")
+        sys.exit(1)
+    
+    process_name = generate_random_process_name()
+    
+    expect_script = f"""#!/usr/bin/expect -f
+set timeout 20
+spawn supercore cloudflared tunnel --url http://localhost:{port}
+expect "└────╼ ❯❯❯"
+send "{process_name}\\r"
+expect eof
+"""
+    
+    script_path = f"/tmp/cloudflared_tunnel_{port}.exp"
+    with open(script_path, "w") as f:
+        f.write(expect_script)
+    
+    os.chmod(script_path, 0o755)
+    
+    try:
+        process = subprocess.Popen(
+            [script_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1
+        )
+        
+        output_lines = []
+        url_found = False
+        extracted_url = None
+        
+        print_yellow("Connecting to CloudServer...")
+        
+        start_time = time.time()
+        while time.time() - start_time < 15:
+            line = process.stdout.readline()
+            if line:
+                output_lines.append(line)
+                url_pattern = r'https://[a-z0-9\-]+\.trycloudflare\.com'
+                match = re.search(url_pattern, line)
+                if match:
+                    extracted_url = match.group(0)
+                    url_found = True
+                    break
+            
+            if process.poll() is not None:
+                break
+                
+            time.sleep(0.1)
+        
+        if not url_found:
+            remaining = process.stdout.read()
+            if remaining:
+                output_lines.append(remaining)
+            full_output = ''.join(output_lines)
+            url_pattern = r'https://[a-z0-9\-]+\.trycloudflare\.com'
+            match = re.search(url_pattern, full_output)
+            if match:
+                extracted_url = match.group(0)
+                url_found = True
+        
+        process.wait()
+        
+        if url_found and extracted_url:
+            print("\n")
+            print_green(f"Exposed Successfully On Free Subdomain.\n")
+            print_green(f"Exposed On: {extracted_url}\n")
+            print_green(f"Port: {port}\n")
+            print_green(f"SSL Installed Using Google Trust Services\n")
+            print_yellow(f"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+            print_yellow(f"If You Like NitroExpose, Please Support Us by:\n")
+            print_yellow(f" * Join Our Telegram Channel:   https://t.me/NacDevs")
+            print_yellow(f" * Please Star Our Project:     https://github.com/yuvrajmodz/NitroExpose")
+            print_yellow(f"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n")
+            sys.exit(0)
+        else:
+            print_red("Server is Busy, Try Again Later.")
+            os.remove(script_path)
+            sys.exit(1)
+            
+    except Exception as e:
+        print_red("Server is Busy, Try Again Later.")
+        if os.path.exists(script_path):
+            os.remove(script_path)
+        sys.exit(1)
+
 def main():
     if len(sys.argv) == 2 and sys.argv[1] in ["-v", "--v"]:
         version = get_version()
         print_green(f"V{version}")
         sys.exit(0)
+
+    if len(sys.argv) == 2 and sys.argv[1] == "--freehost":
+        freehost_mode()
+        return
 
     if len(sys.argv) == 3 and sys.argv[1] == "remove":
         domain = sys.argv[2]
