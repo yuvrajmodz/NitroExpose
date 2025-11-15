@@ -1,6 +1,6 @@
 ## NitroExpose
 
-**Letest Version:** 2.3  
+**Letest Version:** 2.5  
 **Developer:** @Nactire  
 **Git Repo:** [NitroExpose](https://github.com/yuvrajmodz/NitroExpose)
 
@@ -66,21 +66,6 @@ Step 4 – **Enter Your Local Port to Expose**
 ```
 
 ✨ **Now it Will Take 8 to 9 Seconds For Verification And Then Boom! Your Local Port Successfully Exposed To Your Public Domain/Subdomain**.  
-
-## 🌐 Host On Free Subdomain (Cloudflared).
-
-Step 1 – **Launch NitroExpose With FreeHost**  
-```bash
-NitroExpose --freehost
-```
-
-Step 2 – **Enter Your Local Port To Expose On Subdomain**  
-```bash
-┌─╼ Enter Port To Expose
-└────╼ ❯❯❯ 8001
-```
-
-✨ **Now it Will Take 8 to 9 Seconds To Connect CloudServer And Then Your Service Successfully Exposed To Our Subdomain With 24/7.**  
 
 
 ## 🎯 To Remove Domain/Subdomain
