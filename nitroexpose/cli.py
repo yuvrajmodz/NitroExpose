@@ -9,6 +9,7 @@ import time
 import requests
 import signal
 import socket
+import ssl
 import importlib.metadata
 
 # cli.py (Main File)
@@ -71,6 +72,40 @@ def is_port_listening(port):
         sock.close()
         return result == 0
     except Exception:
+        return False
+
+def check_ssl_certificate(domain, port=443, timeout=10):
+    """
+    Check if SSL certificate is installed and valid on the domain
+    Returns True if SSL is properly configured, False otherwise
+    """
+    try:
+        context = ssl.create_default_context()
+        
+        with socket.create_connection((domain, port), timeout=timeout) as sock:
+            with context.wrap_socket(sock, server_hostname=domain) as ssock:
+                # Get certificate info
+                cert = ssock.getpeercert()
+                
+                # If we reach here, SSL handshake was successful
+                if cert:
+                    return True
+                return False
+                
+    except ssl.SSLError as e:
+        # SSL related errors (certificate issues, handshake failures, etc.)
+        return False
+    except socket.timeout:
+        # Connection timeout
+        return False
+    except socket.gaierror:
+        # DNS resolution failed
+        return False
+    except ConnectionRefusedError:
+        # Port 443 not listening
+        return False
+    except Exception as e:
+        # Any other unexpected errors
         return False
 
 def restricted_input(prompt, allowed_pattern):
@@ -372,15 +407,8 @@ server {{
     print_yellow("SSL Certificate Checking...")
     time.sleep(2)
 
-    ssl_installed = False
-    try:
-        r = requests.get(f"https://{domain}", timeout=10)
-        if r.status_code == 200:
-            ssl_installed = True
-    except requests.exceptions.SSLError:
-        ssl_installed = False
-    except requests.exceptions.RequestException:
-        ssl_installed = False
+    # Use SSL module to check certificate instead of HTTP request
+    ssl_installed = check_ssl_certificate(domain, port=443, timeout=10)
 
     print("\n")
     if ssl_installed:
