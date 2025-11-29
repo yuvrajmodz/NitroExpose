@@ -1,6 +1,6 @@
 ## NitroExpose
 
-**Letest Version:** 2.5  
+**Letest Version:** 2.6  
 **Developer:** @Nactire  
 **Git Repo:** [NitroExpose](https://github.com/yuvrajmodz/NitroExpose)
 
