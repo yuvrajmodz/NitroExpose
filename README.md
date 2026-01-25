@@ -1,6 +1,6 @@
 ## NitroExpose
 
-**Letest Version:** 2.6  
+**Letest Version:** 2.7  
 **Developer:** @Nactire  
 **Git Repo:** [NitroExpose](https://github.com/yuvrajmodz/NitroExpose)
 
@@ -10,7 +10,7 @@
 **NitroExpose** is an advanced CLI tool that allows you to **instantly expose any local port to your custom domain,**  
 **automatic SSL installation** Powered by Let's Encrypt.  
 
-If You Don't Have Domain, No Problem We Also Provide Free Subdomain To Host Your Local Port Service On Subdomain With Https.
+If You Don't Have Domain, No Problem We Also Provide Free Subdomain To Host Your Local Port Service On Subdomain With SSL.
 
 It provides a **one-command deployment system** for developers who want to run their local apps (Flask, FastAPI, Node.js, etc.) directly on a live domain without manually configuring NGINX or DNS records.
 
